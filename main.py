@@ -243,13 +243,21 @@ def draw_pong_game():
         score_text = f"{pong_score}"
         bbox = draw.textbbox((0, 0), score_text, font=font_tiny)
         text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
         draw.text(
-            ((oled.width - text_width) // 2, 2), score_text, font=font_tiny, fill=255
+            ((oled.width - text_width) // 2, oled.height - text_height - 2),
+            score_text,
+            font=font_tiny,
+            fill=255,
         )
 
-        # Draw speed indicator at top left
-        speed_text = f"Spd:{ball_speed:.1f}"
-        draw.text((2, 2), speed_text, font=font_tiny, fill=255)
+        # Draw speed indicator at top center
+        speed_text = f"Spd:{ball_speed:.0f}"
+        bbox = draw.textbbox((0, 0), speed_text, font=font_tiny)
+        text_width = bbox[2] - bbox[0]
+        draw.text(
+            ((oled.width - text_width) // 2, 2), speed_text, font=font_tiny, fill=255
+        )
 
 
 def draw_clock_view():
@@ -354,14 +362,14 @@ while True:
 
         if button_l_pressed and last_button_l:
             # Decrease ball speed
-            ball_speed = max(0.5, ball_speed - 0.5)
+            ball_speed = max(1, ball_speed - 1)
             # Update ball velocity to new speed while keeping direction
             if ball_dx != 0:
                 ball_dx = ball_speed * (1 if ball_dx > 0 else -1)
 
         if button_r_pressed and last_button_r:
             # Increase ball speed (no upper limit)
-            ball_speed += 0.5
+            ball_speed += 1
             # Update ball velocity to new speed while keeping direction
             if ball_dx != 0:
                 ball_dx = ball_speed * (1 if ball_dx > 0 else -1)
