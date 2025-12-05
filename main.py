@@ -54,6 +54,10 @@ button_D = DigitalInOut(board.D22)
 button_D.direction = Direction.INPUT
 button_D.pull = Pull.UP
 
+button_A = DigitalInOut(board.D5)
+button_A.direction = Direction.INPUT
+button_A.pull = Pull.UP
+
 # Clear display
 oled.fill(0)
 oled.show()
@@ -66,6 +70,7 @@ draw = ImageDraw.Draw(image)
 font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
 font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
 font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24)
+font_huge = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 32)
 
 # View state: 0 = clock/date, 1 = IP address
 current_view = 0
@@ -74,6 +79,10 @@ NUM_VIEWS = 2
 # Button state tracking for edge detection
 last_button_u = True
 last_button_d = True
+last_button_a = True
+
+# Name display mode (toggled by button A/D5)
+name_mode = False
 
 
 def draw_clock_view():
@@ -108,9 +117,33 @@ def draw_ip_view():
     draw.text((0, 48), "wlan0 / eth0", font=font_small, fill=255)
 
 
+def draw_name_view():
+    """Draw name based on day of year: Matheo if odd, Nuria if even."""
+    draw.rectangle((0, 0, oled.width, oled.height), outline=0, fill=0)
+
+    # Get day of year (1-366)
+    day_of_year = int(time.strftime("%j"))
+
+    if day_of_year % 2 == 1:  # Odd day
+        name = "Matheo"
+    else:  # Even day
+        name = "Nuria"
+
+    # Center the name on the display
+    bbox = draw.textbbox((0, 0), name, font=font_huge)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+    x = (oled.width - text_width) // 2
+    y = (oled.height - text_height) // 2
+
+    draw.text((x, y), name, font=font_huge, fill=255)
+
+
 def update_display():
     """Update the display based on current view."""
-    if current_view == 0:
+    if name_mode:
+        draw_name_view()
+    elif current_view == 0:
         draw_clock_view()
     elif current_view == 1:
         draw_ip_view()
@@ -124,6 +157,7 @@ while True:
     # Read button states (active low)
     button_u_pressed = not button_U.value
     button_d_pressed = not button_D.value
+    button_a_pressed = not button_A.value
 
     # Detect button press (falling edge)
     if button_u_pressed and last_button_u:
@@ -134,9 +168,14 @@ while True:
         # Down button pressed - go to next view
         current_view = (current_view + 1) % NUM_VIEWS
 
+    if button_a_pressed and last_button_a:
+        # Button A (D5) pressed - toggle name mode
+        name_mode = not name_mode
+
     # Update button state tracking
     last_button_u = not button_u_pressed
     last_button_d = not button_d_pressed
+    last_button_a = not button_a_pressed
 
     # Update the display
     update_display()
