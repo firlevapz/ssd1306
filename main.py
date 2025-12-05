@@ -344,13 +344,13 @@ while True:
         # Pong game controls
         if button_u_pressed:
             # Move both paddles up
-            paddle_left_y = max(0, paddle_left_y - 4)
-            paddle_right_y = max(0, paddle_right_y - 4)
+            paddle_left_y = max(0, paddle_left_y - 8)
+            paddle_right_y = max(0, paddle_right_y - 8)
 
         if button_d_pressed:
             # Move both paddles down
-            paddle_left_y = min(oled.height - PADDLE_HEIGHT, paddle_left_y + 4)
-            paddle_right_y = min(oled.height - PADDLE_HEIGHT, paddle_right_y + 4)
+            paddle_left_y = min(oled.height - PADDLE_HEIGHT, paddle_left_y + 8)
+            paddle_right_y = min(oled.height - PADDLE_HEIGHT, paddle_right_y + 8)
 
         if button_l_pressed and last_button_l:
             # Decrease ball speed
