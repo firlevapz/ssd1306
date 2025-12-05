@@ -1,0 +1,14 @@
+[Unit]
+Description=SSD1306 OLED Clock Display
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/fabian/ssd1306
+ExecStart=/home/fabian/env/bin/python3 /home/fabian/ssd1306/main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
