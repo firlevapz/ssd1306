@@ -70,8 +70,8 @@ def save_high_scores(scores):
 def check_and_update_high_scores(new_score):
     """Check if new score beats a high score and update if so."""
     scores = load_high_scores()
-    # Check if new score beats any of the top 3
-    if new_score > scores[2]:  # Beats at least the 3rd place
+    # Always add new score if it's greater than 0 and beats the lowest
+    if new_score > 0 and new_score > min(scores):
         scores.append(new_score)
         scores.sort(reverse=True)
         scores = scores[:3]  # Keep only top 3
@@ -149,6 +149,7 @@ name_mode = False
 pong_mode = False
 pong_game_over = False
 pong_score = 0
+pong_score_recorded = False  # Flag to ensure score is only recorded once
 
 # Pong game constants
 PADDLE_WIDTH = 3
@@ -170,7 +171,7 @@ ball_speed = 2.0  # Base speed multiplier
 def reset_pong_game(reset_speed=False):
     """Initialize or reset the pong game state."""
     global paddle_left_y, paddle_right_y, ball_x, ball_y, ball_dx, ball_dy, ball_speed
-    global pong_game_over, pong_score
+    global pong_game_over, pong_score, pong_score_recorded
 
     if reset_speed:
         ball_speed = 2.0
@@ -183,11 +184,19 @@ def reset_pong_game(reset_speed=False):
     ball_dy = ball_speed * random.choice([0.5, -0.5, 1, -1])
     pong_game_over = False
     pong_score = 0
+    pong_score_recorded = False
 
 
 def update_pong_game():
     """Update the pong game logic."""
-    global ball_x, ball_y, ball_dx, ball_dy, pong_game_over, pong_score
+    global \
+        ball_x, \
+        ball_y, \
+        ball_dx, \
+        ball_dy, \
+        pong_game_over, \
+        pong_score, \
+        pong_score_recorded
 
     if pong_game_over:
         return
@@ -216,8 +225,11 @@ def update_pong_game():
             pong_score += int(ball_speed)
         elif ball_x - BALL_RADIUS <= 0:
             # Ball passed the left paddle - game over
-            pong_game_over = True
-            check_and_update_high_scores(pong_score)
+            if not pong_game_over:
+                pong_game_over = True
+                if not pong_score_recorded:
+                    pong_score_recorded = True
+                    check_and_update_high_scores(pong_score)
 
     # Ball collision with right paddle
     if ball_x + BALL_RADIUS >= PADDLE_RIGHT_X:
@@ -231,8 +243,11 @@ def update_pong_game():
             pong_score += int(ball_speed)
         elif ball_x + BALL_RADIUS >= oled.width:
             # Ball passed the right paddle - game over
-            pong_game_over = True
-            check_and_update_high_scores(pong_score)
+            if not pong_game_over:
+                pong_game_over = True
+                if not pong_score_recorded:
+                    pong_score_recorded = True
+                    check_and_update_high_scores(pong_score)
 
 
 def draw_pong_game():
