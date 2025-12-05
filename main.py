@@ -44,7 +44,7 @@ def get_current_ip():
 
 
 # High score file path
-HIGH_SCORE_FILE = "/home/fabian/projects/ssd1306/pong_highscores.json"
+HIGH_SCORE_FILE = "/home/fabian/ssd1306/pong_highscores.json"
 
 
 def load_high_scores():
