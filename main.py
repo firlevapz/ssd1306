@@ -6,6 +6,8 @@
 # Press B (D6) to start/stop a Pong game.
 
 import fcntl
+import json
+import os
 import random
 import socket
 import struct
@@ -39,6 +41,42 @@ def get_current_ip():
             return get_ip_address("eth0")
         except OSError:
             return "NO INTERNET!"
+
+
+# High score file path
+HIGH_SCORE_FILE = "/home/fabian/projects/ssd1306/pong_highscores.json"
+
+
+def load_high_scores():
+    """Load high scores from file."""
+    try:
+        if os.path.exists(HIGH_SCORE_FILE):
+            with open(HIGH_SCORE_FILE, "r") as f:
+                return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        pass
+    return [0, 0, 0]  # Default top 3 scores
+
+
+def save_high_scores(scores):
+    """Save high scores to file."""
+    try:
+        with open(HIGH_SCORE_FILE, "w") as f:
+            json.dump(scores, f)
+    except IOError:
+        pass
+
+
+def check_and_update_high_scores(new_score):
+    """Check if new score beats a high score and update if so."""
+    scores = load_high_scores()
+    # Check if new score beats any of the top 3
+    if new_score > scores[2]:  # Beats at least the 3rd place
+        scores.append(new_score)
+        scores.sort(reverse=True)
+        scores = scores[:3]  # Keep only top 3
+        save_high_scores(scores)
+    return scores
 
 
 # Create the I2C interface
@@ -129,11 +167,13 @@ ball_dy = 0.0
 ball_speed = 2.0  # Base speed multiplier
 
 
-def reset_pong_game():
+def reset_pong_game(reset_speed=False):
     """Initialize or reset the pong game state."""
     global paddle_left_y, paddle_right_y, ball_x, ball_y, ball_dx, ball_dy, ball_speed
     global pong_game_over, pong_score
 
+    if reset_speed:
+        ball_speed = 2.0
     paddle_left_y = (oled.height - PADDLE_HEIGHT) // 2
     paddle_right_y = (oled.height - PADDLE_HEIGHT) // 2
     ball_x = oled.width // 2
@@ -177,6 +217,7 @@ def update_pong_game():
         elif ball_x - BALL_RADIUS <= 0:
             # Ball passed the left paddle - game over
             pong_game_over = True
+            check_and_update_high_scores(pong_score)
 
     # Ball collision with right paddle
     if ball_x + BALL_RADIUS >= PADDLE_RIGHT_X:
@@ -191,6 +232,7 @@ def update_pong_game():
         elif ball_x + BALL_RADIUS >= oled.width:
             # Ball passed the right paddle - game over
             pong_game_over = True
+            check_and_update_high_scores(pong_score)
 
 
 def draw_pong_game():
@@ -199,9 +241,14 @@ def draw_pong_game():
 
     if pong_game_over:
         # Game over screen
-        draw.text((20, 10), "GAME OVER", font=font_medium, fill=255)
-        draw.text((20, 30), f"Score: {pong_score}", font=font_small, fill=255)
-        draw.text((10, 48), "Press C/D4 to restart", font=font_tiny, fill=255)
+        high_scores = load_high_scores()
+        draw.text((30, 0), "GAME OVER", font=font_small, fill=255)
+        draw.text((0, 14), f"Score: {pong_score}", font=font_tiny, fill=255)
+        # Display top 3 high scores
+        draw.text((70, 14), "Top 3:", font=font_tiny, fill=255)
+        for i, score in enumerate(high_scores):
+            draw.text((70, 24 + i * 10), f"{i + 1}. {score}", font=font_tiny, fill=255)
+        draw.text((0, 54), "Press C/D4 to restart", font=font_tiny, fill=255)
     else:
         # Draw left paddle
         draw.rectangle(
@@ -239,13 +286,13 @@ def draw_pong_game():
             fill=255,
         )
 
-        # Draw score at top center
+        # Draw score at bottom center
         score_text = f"{pong_score}"
         bbox = draw.textbbox((0, 0), score_text, font=font_tiny)
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
         draw.text(
-            ((oled.width - text_width) // 2, oled.height - text_height - 2),
+            ((oled.width - text_width) // 2, oled.height - text_height - 6),
             score_text,
             font=font_tiny,
             fill=255,
@@ -346,7 +393,7 @@ while True:
         # Button B (D6) pressed - toggle pong mode
         pong_mode = not pong_mode
         if pong_mode:
-            reset_pong_game()
+            reset_pong_game(reset_speed=True)
 
     if pong_mode:
         # Pong game controls
