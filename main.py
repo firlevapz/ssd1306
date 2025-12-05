@@ -125,9 +125,9 @@ def draw_name_view():
     day_of_year = int(time.strftime("%j"))
 
     if day_of_year % 2 == 1:  # Odd day
-        name = "Matheo"
-    else:  # Even day
         name = "Nuria"
+    else:  # Even day
+        name = "Matheo"
 
     # Center the name on the display
     bbox = draw.textbbox((0, 0), name, font=font_huge)
